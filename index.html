@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabunganKu - Kelola Keuanganmu</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            /* Dark Mode (Default) */
+            --bg-main: #141824;
+            --bg-sidebar: #1b2030;
+            --bg-card: #22283a;
+            --bg-input: #1b2030;
+            --text-main: #ffffff;
+            --text-muted: #8b95a5;
+            --border-color: #2c3347;
+            --primary-color: #3b5998;
+            --primary-hover: #4c70ba;
+            --income-color: #22c55e;
+            --income-bg: rgba(34, 197, 94, 0.1);
+            --expense-color: #ef4444;
+            --expense-bg: rgba(239, 68, 68, 0.1);
+            --warning-color: #f59e0b;
+        }
+
+        .light-mode {
+            --bg-main: #f3f4f6;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #f9fafb;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+        .brand {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .brand i {
+            color: var(--warning-color);
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 15px 10px;
+            flex: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 5px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary-color);
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+            transition: all 0.3s ease;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: var(--bg-card);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Section visibility */
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-info p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .stat-info h3 {
+            font-size: 1.2rem;
+        }
+
+        .text-income { color: var(--income-color); }
+        .text-expense { color: var(--expense-color); }
+        .text-warning { color: var(--warning-color); }
+
+        .bg-income { background-color: var(--income-bg); color: var(--income-color); }
+        .bg-expense { background-color: var(--expense-bg); color: var(--expense-color); }
+        .bg-warning { background-color: rgba(245, 158, 11, 0.1); color: var(--warning-color); }
+        .bg-info { background-color: rgba(59, 130, 246, 0.1); color: var(--primary-color); }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background-color: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Forms & Inputs */
+        .form-card {
+            background-color: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-success { background-color: var(--income-color); }
+        .btn-danger { background-color: var(--expense-color); }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+        /* Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-income { background-color: var(--income-bg); color: var(--income-color); }
+        .badge-expense { background-color: var(--expense-bg); color: var(--expense-color); }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* Wishlist & Hutang Cards */
+        .list-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .item-card {
+            background-color: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: var(--border-color);
+            border-radius: 4px;
+            margin: 15px 0 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* History Dropdown Styling */
+        .history-toggle {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .light-mode .history-toggle {
+            background: rgba(0, 0, 0, 0.03);
+        }
+        .history-toggle:hover {
+            background: var(--border-color);
+        }
+        
+        .progress-history {
+            margin-top: 10px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .mini-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .mini-history-item:last-child {
+            border-bottom: none;
+        }
+        .mini-history-item .date-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .mini-history-item .amount-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .filters .form-control {
+            width: auto;
+            min-width: 150px;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 480px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="brand" id="brand-title" title="Klik 3x untuk Fitur Rahasia Reset Data">
+            <i class="fa-solid fa-sack-dollar"></i> TabunganKu
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item"><a class="nav-link active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" onclick="showSection('transaksi')"><i class="fa-solid fa-pen-to-square"></i> Transaksi</a></li>
+            <li class="nav-item"><a class="nav-link" onclick="showSection('wishlist')"><i class="fa-solid fa-star"></i> Wishlist</a></li>
+            <li class="nav-item"><a class="nav-link" onclick="showSection('hutang')"><i class="fa-solid fa-hand-holding-dollar"></i> Hutang</a></li>
+            <li class="nav-item"><a class="nav-link" onclick="showSection('history')"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div style="font-weight: 600;" id="page-title">Dashboard</div>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </button>
+        </header>
+
+        <!-- DASHBOARD SECTION -->
+        <section id="dashboard" class="section active">
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-icon bg-income"><i class="fa-solid fa-money-bill-wave"></i></div>
+                    <div class="stat-info">
+                        <p>Total Pemasukan</p>
+                        <h3 class="text-income" id="dash-income">Rp 0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-expense"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                    <div class="stat-info">
+                        <p>Total Pengeluaran</p>
+                        <h3 class="text-expense" id="dash-expense">Rp 0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="stat-info">
+                        <p>Saldo Saat Ini</p>
+                        <h3 class="text-warning" id="dash-balance">Rp 0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info"><i class="fa-solid fa-receipt"></i></div>
+                    <div class="stat-info">
+                        <p>Jumlah Transaksi</p>
+                        <h3 id="dash-count">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="card-header"><i class="fa-solid fa-chart-line"></i> Grafik Bulanan</div>
+                    <canvas id="barChart" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="card-header"><i class="fa-solid fa-chart-pie"></i> Proporsi</div>
+                    <canvas id="pieChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="card-header"><i class="fa-solid fa-clock"></i> 5 Transaksi Terakhir</div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Tipe</th>
+                                <th>Jumlah</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-transactions">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRANSAKSI SECTION -->
+        <section id="transaksi" class="section">
+            <div class="form-card">
+                <div class="card-header" id="tx-form-title"><i class="fa-solid fa-plus"></i> Tambah Transaksi</div>
+                <form id="form-transaksi">
+                    <input type="hidden" id="tx-id">
+                    <div class="form-group">
+                        <label>Tanggal & Waktu</label>
+                        <input type="datetime-local" id="tx-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipe Transaksi</label>
+                        <select id="tx-type" class="form-control" required>
+                            <option value="Pemasukan">Pemasukan</option>
+                            <option value="Pengeluaran">Pengeluaran</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Uang (Rp)</label>
+                        <input type="number" id="tx-amount" class="form-control" placeholder="Contoh: 50000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Catatan</label>
+                        <input type="text" id="tx-note" class="form-control" placeholder="Contoh: Gaji / Makan" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Simpan</button>
+                    <button type="button" class="btn" style="background:#6c757d; display:none;" id="btn-cancel-tx" onclick="resetTxForm()">Batal</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- WISHLIST SECTION -->
+        <section id="wishlist" class="section">
+            <div class="form-card">
+                <div class="card-header" id="wl-form-title"><i class="fa-solid fa-star"></i> Tambah Wishlist (Tabungan)</div>
+                <form id="form-wishlist">
+                    <input type="hidden" id="wl-id">
+                    <div class="form-group">
+                        <label>Judul Tabungan</label>
+                        <input type="text" id="wl-title" class="form-control" placeholder="Contoh: Beli Laptop" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Uang (Rp)</label>
+                        <input type="number" id="wl-target" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Waktu (Bulan)</label>
+                        <input type="number" id="wl-months" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Simpan</button>
+                    <button type="button" class="btn" style="background:#6c757d; display:none;" id="btn-cancel-wl" onclick="resetWlForm()">Batal</button>
+                </form>
+            </div>
+            <div class="list-grid" id="wishlist-container">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- HUTANG SECTION -->
+        <section id="hutang" class="section">
+            <div class="form-card">
+                <div class="card-header" id="ht-form-title"><i class="fa-solid fa-hand-holding-dollar"></i> Catat Hutang Baru</div>
+                <form id="form-hutang">
+                    <input type="hidden" id="ht-id">
+                    <div class="form-group">
+                        <label>Judul / Nama Peminjam</label>
+                        <input type="text" id="ht-title" class="form-control" placeholder="Contoh: Hutang Si A" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Hutang (Rp)</label>
+                        <input type="number" id="ht-amount" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Simpan</button>
+                    <button type="button" class="btn" style="background:#6c757d; display:none;" id="btn-cancel-ht" onclick="resetHtForm()">Batal</button>
+                </form>
+            </div>
+            <div class="list-grid" id="hutang-container">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+        <!-- HISTORY SECTION -->
+        <section id="history" class="section">
+            <div class="chart-card">
+                <div class="card-header"><i class="fa-solid fa-list"></i> Daftar Transaksi</div>
+                <div class="filters">
+                    <input type="text" id="filter-search" class="form-control" placeholder="Cari catatan..." oninput="renderHistory()">
+                    <select id="filter-type" class="form-control" onchange="renderHistory()">
+                        <option value="Semua">Semua Tipe</option>
+                        <option value="Pemasukan">Pemasukan</option>
+                        <option value="Pengeluaran">Pengeluaran</option>
+                        <option value="Menabung">Menabung</option>
+                        <option value="Bayar Hutang">Bayar Hutang</option>
+                    </select>
+                    <input type="month" id="filter-month" class="form-control" onchange="renderHistory()">
+                    <button class="btn btn-primary" onclick="document.getElementById('filter-month').value=''; renderHistory();"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Tipe</th>
+                                <th>Jumlah</th>
+                                <th>Catatan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Progress (Add/Edit Money to Wishlist / Pay Debt) -->
+    <div class="modal-overlay" id="progressModal">
+        <div class="modal-content">
+            <h3 id="modal-title" style="margin-bottom: 15px;">Tambah Progress</h3>
+            <input type="hidden" id="modal-type"> 
+            <input type="hidden" id="modal-item-id"> 
+            <input type="hidden" id="modal-tx-id"> 
+            
+            <div class="form-group">
+                <label>Nominal (Rp)</label>
+                <input type="number" id="modal-amount" class="form-control">
+                <small style="color: var(--warning-color); margin-top:5px; display:block;">*Uang ini akan tercatat sebagai Pengeluaran.</small>
+            </div>
+            <div style="display:flex; gap:10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="submitProgress()">Simpan</button>
+                <button class="btn" style="background:#6c757d;" onclick="closeModal()">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- STATE MANAGEMENT --- */
+        let data = {
+            transactions: JSON.parse(localStorage.getItem('tb_transactions')) || [],
+            wishlists: JSON.parse(localStorage.getItem('tb_wishlists')) || [],
+            debts: JSON.parse(localStorage.getItem('tb_debts')) || []
+        };
+
+        function saveData() {
+            localStorage.setItem('tb_transactions', JSON.stringify(data.transactions));
+            localStorage.setItem('tb_wishlists', JSON.stringify(data.wishlists));
+            localStorage.setItem('tb_debts', JSON.stringify(data.debts));
+            updateAllViews();
+        }
+
+        /* --- UTILS --- */
+        const formatRp = (num) => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
+        const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
+        
+        function formatDate(dateString) {
+            const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return new Date(dateString).toLocaleDateString('id-ID', options).replace(',', '');
+        }
+
+        /* --- UI & NAVIGATION --- */
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const icon = document.getElementById('theme-icon');
+            if(document.body.classList.contains('light-mode')) {
+                icon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                icon.classList.replace('fa-sun', 'fa-moon');
+            }
+            updateCharts(); 
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            
+            const titles = {
+                'dashboard': 'Dashboard',
+                'transaksi': 'Kelola Transaksi',
+                'wishlist': 'Tabungan & Wishlist',
+                'hutang': 'Kelola Hutang',
+                'history': 'Riwayat Transaksi'
+            };
+            document.getElementById('page-title').innerText = titles[sectionId];
+
+            if(window.innerWidth <= 768) toggleSidebar();
+        }
+
+        function toggleDropdown(id) {
+            const el = document.getElementById('drop-' + id);
+            const icon = document.getElementById('icon-' + id);
+            if(el.style.display === 'block') {
+                el.style.display = 'none';
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            } else {
+                el.style.display = 'block';
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            }
+        }
+
+        /* --- TRANSACTIONS LOGIC --- */
+        document.getElementById('form-transaksi').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('tx-id').value;
+            const tx = {
+                id: id ? id : generateId(),
+                date: document.getElementById('tx-date').value,
+                type: document.getElementById('tx-type').value,
+                amount: parseFloat(document.getElementById('tx-amount').value),
+                note: document.getElementById('tx-note').value
+            };
+
+            if(id) {
+                const index = data.transactions.findIndex(t => t.id === id);
+                data.transactions[index] = tx;
+            } else {
+                data.transactions.push(tx);
+            }
+            
+            data.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+            
+            resetTxForm();
+            saveData();
+            showSection('history');
+            
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-link')[4].classList.add('active'); 
+            document.getElementById('page-title').innerText = 'Riwayat Transaksi';
+        });
+
+        function resetTxForm() {
+            document.getElementById('tx-id').value = '';
+            document.getElementById('form-transaksi').reset();
+            document.getElementById('tx-form-title').innerHTML = '<i class="fa-solid fa-plus"></i> Tambah Transaksi';
+            document.getElementById('btn-cancel-tx').style.display = 'none';
+        }
+
+        function editTransaction(id) {
+            const tx = data.transactions.find(t => t.id === id);
+            if(!tx) return;
+            document.getElementById('tx-id').value = tx.id;
+            document.getElementById('tx-date').value = tx.date;
+            document.getElementById('tx-type').value = tx.type;
+            document.getElementById('tx-amount').value = tx.amount;
+            document.getElementById('tx-note').value = tx.note;
+            
+            document.getElementById('tx-form-title').innerHTML = '<i class="fa-solid fa-pen"></i> Edit Transaksi';
+            document.getElementById('btn-cancel-tx').style.display = 'inline-flex';
+            
+            showSection('transaksi');
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-link')[1].classList.add('active');
+            document.getElementById('page-title').innerText = 'Kelola Transaksi';
+        }
+
+        function deleteTransaction(id) {
+            if(confirm('Yakin ingin menghapus transaksi ini?')) {
+                data.transactions = data.transactions.filter(t => t.id !== id);
+                saveData();
+            }
+        }
+
+        /* --- WISHLIST & HUTANG FORMS --- */
+        document.getElementById('form-wishlist').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('wl-id').value;
+            const wl = {
+                id: id ? id : generateId(),
+                title: document.getElementById('wl-title').value,
+                target: parseFloat(document.getElementById('wl-target').value),
+                months: parseInt(document.getElementById('wl-months').value)
+            };
+
+            if(id) {
+                const index = data.wishlists.findIndex(w => w.id === id);
+                data.wishlists[index] = wl;
+            } else {
+                data.wishlists.push(wl);
+            }
+            resetWlForm();
+            saveData();
+        });
+
+        function resetWlForm() {
+            document.getElementById('wl-id').value = '';
+            document.getElementById('form-wishlist').reset();
+            document.getElementById('wl-form-title').innerHTML = '<i class="fa-solid fa-star"></i> Tambah Wishlist (Tabungan)';
+            document.getElementById('btn-cancel-wl').style.display = 'none';
+        }
+
+        function editWishlist(id) {
+            const wl = data.wishlists.find(w => w.id === id);
+            document.getElementById('wl-id').value = wl.id;
+            document.getElementById('wl-title').value = wl.title;
+            document.getElementById('wl-target').value = wl.target;
+            document.getElementById('wl-months').value = wl.months;
+            document.getElementById('wl-form-title').innerHTML = '<i class="fa-solid fa-pen"></i> Edit Wishlist';
+            document.getElementById('btn-cancel-wl').style.display = 'inline-flex';
+            window.scrollTo(0,0);
+        }
+
+        function deleteWishlist(id) {
+            if(confirm('Hapus wishlist ini? (Riwayat tabungan yang sudah masuk tidak akan terhapus dari history transaksi utama)')) {
+                data.wishlists = data.wishlists.filter(w => w.id !== id);
+                saveData();
+            }
+        }
+
+        document.getElementById('form-hutang').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('ht-id').value;
+            const ht = {
+                id: id ? id : generateId(),
+                title: document.getElementById('ht-title').value,
+                amount: parseFloat(document.getElementById('ht-amount').value)
+            };
+
+            if(id) {
+                const index = data.debts.findIndex(d => d.id === id);
+                data.debts[index] = ht;
+            } else {
+                data.debts.push(ht);
+            }
+            resetHtForm();
+            saveData();
+        });
+
+        function resetHtForm() {
+            document.getElementById('ht-id').value = '';
+            document.getElementById('form-hutang').reset();
+            document.getElementById('ht-form-title').innerHTML = '<i class="fa-solid fa-hand-holding-dollar"></i> Catat Hutang Baru';
+            document.getElementById('btn-cancel-ht').style.display = 'none';
+        }
+
+        function editHutang(id) {
+            const ht = data.debts.find(d => d.id === id);
+            document.getElementById('ht-id').value = ht.id;
+            document.getElementById('ht-title').value = ht.title;
+            document.getElementById('ht-amount').value = ht.amount;
+            document.getElementById('ht-form-title').innerHTML = '<i class="fa-solid fa-pen"></i> Edit Hutang';
+            document.getElementById('btn-cancel-ht').style.display = 'inline-flex';
+            window.scrollTo(0,0);
+        }
+
+        function deleteHutang(id) {
+            if(confirm('Hapus hutang ini? (Riwayat cicilan yang sudah masuk tidak akan terhapus dari history transaksi utama)')) {
+                data.debts = data.debts.filter(d => d.id !== id);
+                saveData();
+            }
+        }
+
+        /* --- MODAL PROGRESS & RIWAYAT --- */
+        function openModal(type, id, name) {
+            document.getElementById('progressModal').style.display = 'flex';
+            document.getElementById('modal-title').innerText = type === 'wishlist' ? `Nabung untuk: ${name}` : `Bayar Hutang: ${name}`;
+            document.getElementById('modal-type').value = type;
+            document.getElementById('modal-item-id').value = id;
+            document.getElementById('modal-tx-id').value = ''; 
+            document.getElementById('modal-amount').value = '';
+        }
+
+        function editProgressTx(txId, type, itemObjId, itemName) {
+            const tx = data.transactions.find(t => t.id === txId);
+            if(!tx) return;
+            
+            document.getElementById('progressModal').style.display = 'flex';
+            document.getElementById('modal-title').innerText = `Edit: ${itemName}`;
+            document.getElementById('modal-type').value = type;
+            document.getElementById('modal-item-id').value = itemObjId;
+            document.getElementById('modal-tx-id').value = tx.id; 
+            document.getElementById('modal-amount').value = tx.amount;
+        }
+
+        function deleteProgressTx(txId) {
+            if(confirm('Hapus riwayat ini? Nominal yang sudah terkumpul akan berkurang otomatis.')) {
+                data.transactions = data.transactions.filter(t => t.id !== txId);
+                saveData();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('progressModal').style.display = 'none';
+        }
+
+        function submitProgress() {
+            const amount = parseFloat(document.getElementById('modal-amount').value);
+            if(!amount || amount <= 0) return alert('Masukkan nominal yang valid');
+            
+            const type = document.getElementById('modal-type').value;
+            const itemId = document.getElementById('modal-item-id').value;
+            const txId = document.getElementById('modal-tx-id').value;
+            
+            let noteStr = '';
+            let txTypeStr = '';
+
+            if(type === 'wishlist') {
+                const wl = data.wishlists.find(w => w.id === itemId);
+                noteStr = `Menabung: ${wl ? wl.title : 'Wishlist'}`;
+                txTypeStr = 'Menabung';
+            } else {
+                const ht = data.debts.find(d => d.id === itemId);
+                noteStr = `Bayar Hutang: ${ht ? ht.title : 'Hutang'}`;
+                txTypeStr = 'Bayar Hutang';
+            }
+
+            if(txId) {
+                const tx = data.transactions.find(t => t.id === txId);
+                if(tx) {
+                    tx.amount = amount;
+                    tx.note = noteStr;
+                }
+            } else {
+                data.transactions.push({
+                    id: generateId(),
+                    relatedId: itemId, 
+                    date: new Date().toISOString().slice(0, 16),
+                    type: txTypeStr,
+                    amount: amount,
+                    note: noteStr
+                });
+            }
+
+            data.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+            
+            closeModal();
+            saveData(); 
+            alert('Catatan berhasil disimpan!');
+        }
+
+        /* --- RENDER FUNCTIONS --- */
+        let barChartInst = null;
+        let pieChartInst = null;
+
+        function updateAllViews() {
+            renderDashboard();
+            renderWishlist();
+            renderHutang();
+            renderHistory();
+        }
+
+        function getChartColors() {
+            const isLight = document.body.classList.contains('light-mode');
+            return {
+                text: isLight ? '#6b7280' : '#8b95a5',
+                grid: isLight ? '#e5e7eb' : '#2c3347',
+                income: '#22c55e',
+                expense: '#ef4444'
+            };
+        }
+
+        function updateCharts() {
+            if(barChartInst) barChartInst.destroy();
+            if(pieChartInst) pieChartInst.destroy();
+
+            const now = new Date();
+            let totalInc = 0, totalExp = 0;
+            
+            data.transactions.forEach(t => {
+                const d = new Date(t.date);
+                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+                    if(t.type === 'Pemasukan') totalInc += t.amount;
+                    else totalExp += t.amount; 
+                }
+            });
+
+            const colors = getChartColors();
+            Chart.defaults.color = colors.text;
+
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            barChartInst = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Bulan Ini'],
+                    datasets: [
+                        { label: 'Pemasukan', data: [totalInc], backgroundColor: colors.income },
+                        { label: 'Pengeluaran', data: [totalExp], backgroundColor: colors.expense }
+                    ]
+                },
+                options: { responsive: true, scales: { y: { grid: { color: colors.grid }, ticks: { callback: v => 'Rp '+ (v/1000) + 'k' } }, x: { grid: { display: false } } } }
+            });
+
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChartInst = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pemasukan', 'Pengeluaran'],
+                    datasets: [{ data: [totalInc, totalExp], backgroundColor: [colors.income, colors.expense], borderWidth: 0 }]
+                },
+                options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function renderDashboard() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            data.transactions.forEach(t => {
+                if(t.type === 'Pemasukan') totalIncome += t.amount;
+                else totalExpense += t.amount;
+            });
+
+            document.getElementById('dash-income').innerText = formatRp(totalIncome);
+            document.getElementById('dash-expense').innerText = formatRp(totalExpense);
+            document.getElementById('dash-balance').innerText = formatRp(totalIncome - totalExpense);
+            document.getElementById('dash-count').innerText = data.transactions.length;
+
+            updateCharts();
+
+            const recent = data.transactions.slice(0, 5);
+            const tbody = document.getElementById('recent-transactions');
+            tbody.innerHTML = '';
+            recent.forEach(t => {
+                const isIncome = t.type === 'Pemasukan';
+                const colorClass = isIncome ? 'badge-income' : 'badge-expense';
+                const sign = isIncome ? '+' : '-';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${formatDate(t.date)}</td>
+                        <td><span class="badge ${colorClass}">${t.type}</span></td>
+                        <td class="${isIncome ? 'text-income' : 'text-expense'}">${sign} ${formatRp(t.amount)}</td>
+                        <td>${t.note}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderWishlist() {
+            const container = document.getElementById('wishlist-container');
+            container.innerHTML = '';
+            data.wishlists.forEach(w => {
+                const relatedTxs = data.transactions.filter(t => t.relatedId === w.id || (t.type === 'Menabung' && t.note === `Menabung: ${w.title}`));
+                const saved = relatedTxs.reduce((sum, t) => sum + t.amount, 0);
+                
+                const percent = Math.min((saved / w.target) * 100, 100).toFixed(1);
+                const monthly = w.target / w.months;
+                
+                let historyHtml = relatedTxs.length === 0 ? '<div class="mini-history-item" style="color:var(--text-muted); justify-content:center; border:none;">Belum ada riwayat</div>' : '';
+                relatedTxs.forEach(tx => {
+                    historyHtml += `
+                        <div class="mini-history-item">
+                            <div>
+                                <div class="date-text">${formatDate(tx.date)}</div>
+                                <div class="amount-text text-income">+ ${formatRp(tx.amount)}</div>
+                            </div>
+                            <div class="action-btns">
+                                <button class="btn btn-sm btn-primary" style="padding: 4px 8px;" onclick="editProgressTx('${tx.id}', 'wishlist', '${w.id}', '${w.title}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-sm btn-danger" style="padding: 4px 8px;" onclick="deleteProgressTx('${tx.id}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <h3 style="font-size: 1.1rem;">${w.title}</h3>
+                            <div class="action-btns">
+                                <button class="btn btn-sm btn-primary" onclick="editWishlist('${w.id}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteWishlist('${w.id}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <p style="font-size:0.9rem; color:var(--text-muted);">Target: <strong style="color:var(--text-main);">${formatRp(w.target)}</strong></p>
+                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom: 10px;">Harus ditabung: <strong class="text-warning">${formatRp(monthly)}/bulan</strong> (${w.months} bln)</p>
+                        
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percent}%;"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span>Terkumpul: ${formatRp(saved)}</span>
+                            <span>${percent}%</span>
+                        </div>
+                        
+                        <button class="history-toggle" onclick="toggleDropdown('${w.id}')">
+                            Riwayat Tabungan <i id="icon-${w.id}" class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div id="drop-${w.id}" class="progress-history">
+                            ${historyHtml}
+                        </div>
+
+                        <button class="btn btn-sm btn-success" style="width:100%; margin-top:15px; justify-content:center;" onclick="openModal('wishlist', '${w.id}', '${w.title}')"><i class="fa-solid fa-plus"></i> Tabung Sekarang</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderHutang() {
+            const container = document.getElementById('hutang-container');
+            container.innerHTML = '';
+            data.debts.forEach(d => {
+                const relatedTxs = data.transactions.filter(t => t.relatedId === d.id || (t.type === 'Bayar Hutang' && t.note === `Bayar Hutang: ${d.title}`));
+                const paid = relatedTxs.reduce((sum, t) => sum + t.amount, 0);
+
+                const percent = Math.min((paid / d.amount) * 100, 100).toFixed(1);
+                
+                let historyHtml = relatedTxs.length === 0 ? '<div class="mini-history-item" style="color:var(--text-muted); justify-content:center; border:none;">Belum ada riwayat</div>' : '';
+                relatedTxs.forEach(tx => {
+                    historyHtml += `
+                        <div class="mini-history-item">
+                            <div>
+                                <div class="date-text">${formatDate(tx.date)}</div>
+                                <div class="amount-text text-warning">+ ${formatRp(tx.amount)}</div>
+                            </div>
+                            <div class="action-btns">
+                                <button class="btn btn-sm btn-primary" style="padding: 4px 8px;" onclick="editProgressTx('${tx.id}', 'hutang', '${d.id}', '${d.title}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-sm btn-danger" style="padding: 4px 8px;" onclick="deleteProgressTx('${tx.id}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <h3 style="font-size: 1.1rem; color:var(--expense-color);">${d.title}</h3>
+                            <div class="action-btns">
+                                <button class="btn btn-sm btn-primary" onclick="editHutang('${d.id}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteHutang('${d.id}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <p style="font-size:0.9rem; color:var(--text-muted);">Total Hutang: <strong style="color:var(--text-main);">${formatRp(d.amount)}</strong></p>
+                        
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="background-color:var(--expense-color); width: ${percent}%;"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span>Dibayar: ${formatRp(paid)}</span>
+                            <span>Sisa: ${formatRp(d.amount - paid)}</span>
+                        </div>
+
+                        <button class="history-toggle" onclick="toggleDropdown('${d.id}')">
+                            Riwayat Cicilan <i id="icon-${d.id}" class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div id="drop-${d.id}" class="progress-history">
+                            ${historyHtml}
+                        </div>
+
+                        <button class="btn btn-sm btn-primary" style="width:100%; margin-top:15px; justify-content:center;" onclick="openModal('hutang', '${d.id}', '${d.title}')"><i class="fa-solid fa-check"></i> Bayar Cicilan</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderHistory() {
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const type = document.getElementById('filter-type').value;
+            const monthVal = document.getElementById('filter-month').value;
+
+            const tbody = document.getElementById('history-table');
+            tbody.innerHTML = '';
+
+            let filtered = data.transactions.filter(t => {
+                const matchSearch = t.note.toLowerCase().includes(search);
+                const matchType = type === 'Semua' || t.type === type;
+                let matchMonth = true;
+                if(monthVal) {
+                    const txMonth = t.date.slice(0, 7);
+                    matchMonth = txMonth === monthVal;
+                }
+                return matchSearch && matchType && matchMonth;
+            });
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Tidak ada transaksi ditemukan</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(t => {
+                const isIncome = t.type === 'Pemasukan';
+                const colorClass = isIncome ? 'badge-income' : 'badge-expense';
+                const textClass = isIncome ? 'text-income' : 'text-expense';
+                const sign = isIncome ? '+' : '-';
+                
+                let actions = '-';
+                if(t.type === 'Pemasukan' || t.type === 'Pengeluaran') {
+                    actions = `
+                        <button class="btn btn-sm btn-primary" onclick="editTransaction('${t.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTransaction('${t.id}')"><i class="fa-solid fa-trash"></i></button>
+                    `;
+                } else {
+                    actions = `<span style="font-size:0.75rem; color:var(--text-muted);">Atur di Wishlist/Hutang</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="white-space: nowrap;">${formatDate(t.date)}</td>
+                        <td><span class="badge ${colorClass}">${t.type}</span></td>
+                        <td class="${textClass}" style="white-space: nowrap;">${sign} ${formatRp(t.amount)}</td>
+                        <td>${t.note}</td>
+                        <td><div class="action-btns">${actions}</div></td>
+                    </tr>
+                `;
+            });
+        }
+
+        /* --- FITUR RAHASIA: RESET DATA --- */
+        let secretClickCount = 0;
+        let secretTimer = null;
+        document.getElementById('brand-title').addEventListener('click', () => {
+          secretClickCount++;
+          clearTimeout(secretTimer);
+          
+          if (secretClickCount >= 3) {
+            secretClickCount = 0;
+            const password = prompt("⚠️ PERINGATAN: Fitur rahasia reset data!\nKetik 'RESET' untuk menghapus seluruh data secara permanen:");
+            if (password === 'RESET') {
+              localStorage.removeItem('tb_transactions');
+              localStorage.removeItem('tb_wishlists');
+              localStorage.removeItem('tb_debts');
+              data = { transactions: [], wishlists: [], debts: [] };
+              alert("Seluruh data berhasil di-reset bersih!");
+              updateAllViews();
+            } else {
+              alert("Password salah. Reset dibatalkan.");
+            }
+          } else {
+            secretTimer = setTimeout(() => {
+              secretClickCount = 0;
+            }, 600);
+          }
+        });
+
+        // Initialize
+        updateAllViews();
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('tx-date').value = now.toISOString().slice(0,16);
+    </script>
+</body>
+</html>
